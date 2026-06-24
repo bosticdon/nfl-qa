@@ -2,13 +2,11 @@
 <html>
   <head>
     <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Poppins:wght@700;900&display=swap" rel="stylesheet">
     
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -16,17 +14,96 @@
       body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; overflow-x: hidden; }
       .title-font { font-family: 'Poppins', sans-serif; }
       .dashboard-bg { background: radial-gradient(circle at top right, #1e1b4b 0%, #020617 100%); }
-      .animate-in { animation: fadeIn 0.8s ease-out forwards; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       .custom-scrollbar::-webkit-scrollbar { width: 5px; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
   </head>
   <body class="custom-scrollbar">
     
-    <div id="root"></div>
+    <div id="main-hub-view" class="min-h-screen flex flex-col">
+      <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 flex justify-between items-center shadow-2xl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-black title-font shadow-lg">NFL</div>
+          <div>
+            <h1 class="text-sm font-black uppercase tracking-tighter title-font">NFL 2026 Tech Hub</h1>
+            <p class="text-[9px] text-blue-400 font-bold tracking-widest uppercase">Gameday Infrastructure Access</p>
+          </div>
+        </div>
+        <div class="flex bg-slate-800 rounded-lg p-1">
+          <button id="view-tech-btn" class="px-4 py-1.5 rounded-md text-[10px] font-black uppercase bg-blue-600 text-white shadow-md">Technician</button>
+          <button id="view-admin-btn" class="px-4 py-1.5 rounded-md text-[10px] font-black uppercase text-slate-400 hover:text-white">SME Admin</button>
+        </div>
+      </header>
+
+      <main class="max-w-3xl mx-auto w-full p-6 space-y-8 flex-grow">
+        <div id="moderator-toolbar" class="hidden flex gap-3 mb-8">
+          <button id="launch-dashboard-btn" class="flex-1 bg-slate-900 border border-slate-800 hover:border-blue-500 py-6 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all group shadow-xl">
+            <div class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all text-xl">📺</div>
+            <span class="text-[10px] font-black uppercase tracking-[0.2em]">Review Board Mode</span>
+          </button>
+          <button id="master-clear-btn" class="flex-1 bg-slate-900 border border-slate-800 hover:border-red-500 py-6 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all group shadow-xl">
+            <div class="w-10 h-10 rounded-2xl bg-red-600/10 flex items-center justify-center text-red-500 group-hover:bg-red-600 group-hover:text-white transition-all text-xl">📋</div>
+            <span class="text-[10px] font-black uppercase tracking-[0.2em]">Reset Field Data</span>
+          </button>
+        </div>
+
+        <div id="submission-card" class="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 shadow-2xl space-y-6">
+          <div>
+            <h2 class="text-xs font-black uppercase text-blue-500 tracking-widest mb-1">Log Field Query</h2>
+            <p class="text-slate-500 text-[10px] uppercase font-bold tracking-tighter leading-tight">Your inquiry routes onto the active command board for rapid SME response.</p>
+          </div>
+          <form id="qa-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Technician Identifier</label>
+                <input id="tech-name" required placeholder="Full Name (Company/Team)" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Infrastructure Category</label>
+                <select id="tech-topic" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-sm text-white outline-none appearance-none">
+                  <option value="Resource Allocation">Resource Allocation (Assignments)</option>
+                  <option value="Operations">Operations (Software/Process)</option>
+                  <option value="Hardware">Hardware Configurations</option>
+                </select>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Query Parameters</label>
+              <textarea id="tech-question" required placeholder="State technical conditions clearly..." rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all"></textarea>
+            </div>
+            <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl uppercase text-xs tracking-[0.2em] transition-all shadow-lg shadow-blue-600/20">Send to Command</button>
+            <p id="status-msg" class="text-center text-[10px] font-black uppercase text-green-500 tracking-widest hidden"></p>
+          </form>
+        </div>
+
+        <div class="space-y-6">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+            <h2 class="text-xs font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+              <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+              Active Field Logs (<span id="queue-count">0</span>)
+            </h2>
+          </div>
+          <div id="queue-container" class="grid gap-5">
+            </div>
+        </div>
+      </main>
+
+      <footer class="p-12 text-center opacity-20">
+        <p class="text-[9px] font-black tracking-[0.6em] uppercase">Sony Sports • NFL Training Command Center</p>
+      </footer>
+    </div>
+
+    <div id="dashboard-view" class="hidden min-h-screen dashboard-bg flex flex-col items-center justify-center p-12 text-center relative overflow-hidden">
+      <button id="exit-dashboard-btn" class="absolute top-8 right-8 text-slate-700 hover:text-slate-400 text-[10px] font-black uppercase tracking-widest">Exit Review Board</button>
+      <div id="dashboard-content" class="max-w-6xl w-full space-y-12 z-10 animate-in">
+        </div>
+      <div class="absolute bottom-12 left-1/2 -translate-x-1/2 opacity-20">
+         <p class="text-[10px] font-black tracking-[1.2em] uppercase">Sony Sports • NFL Training Command</p>
+      </div>
+    </div>
 
     <script>
+      // 1. Initial Identity Credentials
       const firebaseConfig = {
         apiKey: "AIzaSyAeN_NiZC57eHDcU9pZcsmV6ka7UYOHZdE",
         authDomain: "nfl-tech-training-2026.firebaseapp.com",
@@ -38,261 +115,215 @@
       };
 
       firebase.initializeApp(firebaseConfig);
-      window.dbInstance = firebase.firestore();
-    </script>
-
-    <script type="text/babel" data-presets="react">
-      const { useState, useEffect } = React;
+      const db = firebase.firestore();
+      
+      let currentQuestions = [];
+      let isModeratorMode = false;
       const SME_PASSWORD = "nfl2026admin";
 
-      function App() {
-        const [view, setView] = useState('trainee'); 
-        const [questions, setQuestions] = useState([]);
-        const [isAuthorized, setIsAuthorized] = useState(false);
-        const [showPass, setShowPass] = useState(false);
-        const [passInput, setPassInput] = useState('');
-        const [showClearConfirm, setShowClearConfirm] = useState(false);
+      // 2. Element Selectors
+      const form = document.getElementById('qa-form');
+      const container = document.getElementById('queue-container');
+      const countLabel = document.getElementById('queue-count');
+      const statusMsg = document.getElementById('status-msg');
+      const modToolbar = document.getElementById('moderator-toolbar');
+      
+      // View switches
+      const mainHubView = document.getElementById('main-hub-view');
+      const dashboardView = document.getElementById('dashboard-view');
+      const dashboardContent = document.getElementById('dashboard-content');
+
+      // 3. Setup Live Firestore Database Pipeline
+      db.collection("questions")
+        .orderBy("rawTimestamp", "desc")
+        .onSnapshot((snapshot) => {
+          currentQuestions = [];
+          snapshot.forEach((doc) => {
+            currentQuestions.push({ id: doc.id, ...doc.data() });
+          });
+          renderQueue();
+          renderDashboard();
+        }, (error) => {
+          console.error("Firestore stream failure:", error);
+        });
+
+      // 4. Form Submission Action
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('submit-btn');
         
-        const [name, setName] = useState('');
-        const [topic, setTopic] = useState('Operations');
-        const [question, setQuestion] = useState('');
-        const [loading, setLoading] = useState(false);
-        const [statusMsg, setStatusMsg] = useState('');
+        const nameInput = document.getElementById('tech-name').value;
+        const topicInput = document.getElementById('tech-topic').value;
+        const questionInput = document.getElementById('tech-question').value;
 
-        // Listen for data updates on the database collection
-        useEffect(() => {
-          const unsubscribe = window.dbInstance.collection("questions")
-            .orderBy("rawTimestamp", "desc")
-            .onSnapshot((snapshot) => {
-              const dataList = [];
-              snapshot.forEach((doc) => {
-                dataList.push({ id: doc.id, ...doc.data() });
-              });
-              setQuestions(dataList);
-            }, (error) => {
-              console.error("Firestore connection issue:", error);
-            });
+        submitBtn.disabled = true;
+        submitBtn.innerText = "TRANSMITTING...";
+        
+        try {
+          const now = new Date();
+          const timestampStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-          return () => unsubscribe();
-        }, []);
+          await db.collection("questions").add({
+            author: nameInput || 'Anonymous Tech',
+            topic: topicInput,
+            text: questionInput,
+            timestamp: timestampStr,
+            rawTimestamp: now.getTime(),
+            status: 'pending',
+            answer: '',
+            syncedToSheet: false
+          });
 
-        const handleSubmit = async (e) => {
-          e.preventDefault();
-          if (!question.trim() || loading) return;
-          setLoading(true);
-          setStatusMsg('Transmitting Play...');
-          
-          try {
-            const now = new Date();
-            const timestampStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          document.getElementById('tech-question').value = '';
+          statusMsg.innerText = "Success! Sent to Command Center.";
+          statusMsg.classList.remove('hidden');
+          setTimeout(() => statusMsg.classList.add('hidden'), 5000);
+        } catch (err) {
+          console.error(err);
+          alert("Error processing field document data submission.");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Send to Command";
+        }
+      });
 
-            await window.dbInstance.collection("questions").add({
-              author: name || 'Anonymous Tech',
-              topic: topic,
-              text: question,
-              timestamp: timestampStr,
-              rawTimestamp: now.getTime(),
-              status: 'pending',
-              answer: '',
-              syncedToSheet: false
-            });
-
-            setQuestion('');
-            setStatusMsg('Success! Sent to Command Center.');
-            setTimeout(() => setStatusMsg(''), 5000);
-          } catch (err) {
-            console.error(err);
-            setStatusMsg('Error routing submission.');
-          } finally {
-            setLoading(false);
-          }
-        };
-
-        const pushToDashboard = async (id) => {
-          try {
-            const batch = window.dbInstance.batch();
-            questions.forEach((q) => {
-              if (q.status === 'live') {
-                batch.update(window.dbInstance.collection("questions").doc(q.id), { status: 'pending' });
-              }
-            });
-            batch.update(window.dbInstance.collection("questions").doc(id), { status: 'live' });
-            await batch.commit();
-          } catch (err) {
-            console.error(err);
-          }
-        };
-
-        const markDone = async (id) => {
-          await window.dbInstance.collection("questions").doc(id).update({ status: 'answered' });
-        };
-
-        const handleAnswer = async (id) => {
-          const ans = prompt("Official SME Response (Syncs to Board):");
-          if (ans) {
-            await window.dbInstance.collection("questions").doc(id).update({ answer: ans, status: 'answered' });
-          }
-        };
-
-        const handleMasterClear = async () => {
-          setLoading(true);
-          try {
-            const snapshot = await window.dbInstance.collection("questions").get();
-            const batch = window.dbInstance.batch();
-            snapshot.forEach((doc) => {
-              batch.delete(doc.ref);
-            });
-            await batch.commit();
-            setShowClearConfirm(false);
-          } catch (err) {
-            alert("Clear operation failed.");
-          } finally {
-            setLoading(false);
-          }
-        };
-
-        const handlePasswordSubmit = (e) => {
-          e.preventDefault();
-          if (passInput === SME_PASSWORD) {
-            setIsAuthorized(true);
-            setView('moderator');
-            setShowPass(false);
-            setPassInput('');
-          } else {
-            alert("Incorrect Authorization Key");
-          }
-        };
-
-        if (view === 'dashboard') {
-          const liveQ = questions.find(q => q.status === 'live');
-          return (
-            <div className="min-h-screen dashboard-bg flex flex-col items-center justify-center p-12 text-center relative overflow-hidden">
-              <button onClick={() => setView('moderator')} className="absolute top-8 right-8 text-slate-700 hover:text-slate-400 text-[10px] font-black uppercase tracking-widest">Exit Review Board</button>
-              <div className="max-w-6xl w-full space-y-12 z-10 animate-in">
-                {!liveQ ? (
-                  <div className="space-y-6 opacity-30">
-                    <div className="w-32 h-32 bg-slate-800 rounded-[2.5rem] mx-auto animate-pulse flex items-center justify-center text-4xl">🏈</div>
-                    <h1 className="text-5xl font-black uppercase tracking-tighter title-font">Huddle Up • Awaiting Selection</h1>
-                    <p className="text-slate-500 uppercase tracking-[0.6em] font-bold text-sm">SME Playbook Sync Active</p>
-                  </div>
-                ) : (
-                  <div className="space-y-12">
-                    <div className="inline-block px-8 py-3 bg-red-600 rounded-full text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-red-600/40 mb-6 animate-pulse">Live Broadcast</div>
-                    <h2 className="text-8xl font-black leading-[1.05] title-font tracking-tight text-white drop-shadow-2xl">"{liveQ.text}"</h2>
-                    <div className="flex items-center justify-center gap-12 pt-16 border-t border-slate-800/50">
-                      <div className="text-left">
-                        <p className="text-[11px] font-black text-blue-500 uppercase tracking-widest mb-2">Field Tech</p>
-                        <p className="text-4xl font-black uppercase title-font text-white">{liveQ.author}</p>
-                      </div>
-                      <div className="w-px h-20 bg-slate-800"></div>
-                      <div className="text-left">
-                        <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Inquiry Category</p>
-                        <p className="text-4xl font-black uppercase title-font text-slate-300">{liveQ.topic}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 opacity-20">
-                 <p className="text-[10px] font-black tracking-[1.2em] uppercase">Sony Sports • NFL Training Command</p>
-              </div>
-            </div>
-          );
+      // 5. Layout Painters
+      function renderQueue() {
+        countLabel.innerText = currentQuestions.length;
+        if (currentQuestions.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-20 border-2 border-dashed border-slate-800 rounded-[2.5rem] opacity-20">
+              <p class="text-xs font-black uppercase tracking-[0.3em]">Channel Clear • No Log Entries</p>
+            </div>`;
+          return;
         }
 
-        return (
-          <div className="min-h-screen flex flex-col">
-            <header className="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 flex justify-between items-center shadow-2xl">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-black title-font shadow-lg">NFL</div>
-                <div>
-                  <h1 className="text-sm font-black uppercase tracking-tighter title-font">NFL 2026 Tech Hub</h1>
-                  <p className="text-[9px] text-blue-400 font-bold tracking-widest uppercase">Gameday Infrastructure Access</p>
-                </div>
-              </div>
-              <div className="flex bg-slate-800 rounded-lg p-1">
-                <button onClick={() => setView('trainee')} className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${view === 'trainee' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>Technician</button>
-                <button onClick={() => isAuthorized ? setView('moderator') : setShowPass(true)} className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${view === 'moderator' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>SME Admin</button>
-              </div>
-            </header>
-
-            <main className="max-w-3xl mx-auto w-full p-6 space-y-8 flex-grow">
-              {showPass && (
-                <div className="fixed inset-0 bg-slate-950/95 z-[100] flex items-center justify-center p-6 backdrop-blur-md">
-                  <div className="bg-slate-900 border border-slate-800 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-sm text-center">
-                    <h2 className="text-xl font-black uppercase mb-6 title-font">SME Security Access</h2>
-                    <form onSubmit={handlePasswordSubmit}>
-                      <input type="password" autoFocus value={passInput} onChange={e=>setPassInput(e.target.value)} placeholder="Enter Pin Code" className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-4 text-center mb-4 text-white outline-none focus:ring-2 focus:ring-blue-500" />
-                      <button type="submit" className="w-full bg-blue-600 py-4 rounded-2xl font-black uppercase text-xs tracking-widest">Verify Admin</button>
-                      <button type="button" onClick={()=>setShowPass(false)} className="mt-4 text-[10px] font-bold text-slate-500 uppercase">Cancel</button>
-                    </form>
-                  </div>
-                </div>
-              )}
-
-              {showClearConfirm && (
-                <div className="fixed inset-0 bg-red-950/90 z-[100] flex items-center justify-center p-6 backdrop-blur-md">
-                  <div className="bg-slate-900 border border-red-900/50 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-sm text-center">
-                    <h2 className="text-xl font-black uppercase mb-4 title-font text-red-500">Wipe Queue?</h2>
-                    <p className="text-[10px] text-slate-500 uppercase font-black mb-8 leading-relaxed">This completely deletes the field logs from Firebase. This action cannot be reversed.</p>
-                    <button onClick={handleMasterClear} disabled={loading} className="w-full bg-red-600 py-4 rounded-xl font-black uppercase text-xs tracking-widest mb-2">
-                      {loading ? 'Clearing Board...' : 'Confirm Wipe'}
-                    </button>
-                    <button onClick={()=>setShowClearConfirm(false)} className="w-full py-4 text-[10px] font-bold text-slate-500 uppercase">Cancel</button>
-                  </div>
-                </div>
-              )}
-
-              {view === 'moderator' && (
-                <div className="flex gap-3 mb-8 animate-in">
-                  <button onClick={() => setView('dashboard')} className="flex-1 bg-slate-900 border border-slate-800 hover:border-blue-500 py-6 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all group shadow-xl">
-                    <div className="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all text-xl">📺</div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Review Board Mode</span>
-                  </button>
-                  <button onClick={() => setShowClearConfirm(true)} className="flex-1 bg-slate-900 border border-slate-800 hover:border-red-500 py-6 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all group shadow-xl">
-                    <div className="w-10 h-10 rounded-2xl bg-red-600/10 flex items-center justify-center text-red-500 group-hover:bg-red-600 group-hover:text-white transition-all text-xl">📋</div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Reset Field Data</span>
-                  </button>
-                </div>
-              )}
-
-              {view === 'trainee' && (
-                <div className="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 shadow-2xl space-y-6 animate-in">
+        container.innerHTML = currentQuestions.map(q => {
+          let liveStyle = q.status === 'live' ? 'border-red-600 ring-2 ring-red-600/20' : 'border-slate-800 hover:border-slate-700';
+          let badgeStyle = q.status === 'live' ? 'bg-red-600 text-white animate-pulse' : q.status === 'answered' ? 'bg-green-600/20 text-green-500' : 'bg-slate-800 text-slate-500';
+          
+          return `
+            <div class="bg-slate-900 border rounded-[2rem] p-6 transition-all shadow-xl ${liveStyle}">
+              <div class="flex justify-between items-start mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-xs font-black text-blue-400 border border-slate-700 uppercase">${q.author.charAt(0)}</div>
                   <div>
-                    <h2 className="text-xs font-black uppercase text-blue-500 tracking-widest mb-1">Log Field Query</h2>
-                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-tighter leading-tight">Your inquiry routes onto the active command board for rapid SME response.</p>
+                    <p class="text-sm font-black text-slate-200 uppercase tracking-tight leading-tight">${q.author}</p>
+                    <p class="text-[9px] text-blue-500 font-black uppercase tracking-widest mt-1">${q.topic} • ${q.timestamp}</p>
                   </div>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Technician Identifier</label>
-                        <input value={name} onChange={e => setName(e.target.value)} placeholder="Full Name (Company/Team)" className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Infrastructure Category</label>
-                        <select value={topic} onChange={e => setTopic(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-sm text-white outline-none appearance-none">
-                          <option value="Resource Allocation">Resource Allocation (Assignments)</option>
-                          <option value="Operations">Operations (Software/Process)</option>
-                          <option value="Hardware">Hardware Configurations</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Query Parameters</label>
-                      <textarea required value={question} onChange={e => setQuestion(e.target.value)} placeholder="State technical conditions clearly..." rows="3" className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-                    </div>
-                    <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl uppercase text-xs tracking-[0.2em] transition-all shadow-lg shadow-blue-600/20">
-                      {loading ? 'transmitting...' : 'Send to Command'}
-                    </button>
-                    {statusMsg && <p className="text-center text-[10px] font-black uppercase text-green-500 animate-pulse tracking-widest">{statusMsg}</p>}
-                  </form>
                 </div>
-              )}
+                <span class="text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter ${badgeStyle}">${q.status}</span>
+              </div>
+              <p class="text-sm text-white font-medium italic mb-6 leading-relaxed">"${q.text}"</p>
+              ${q.answer ? `
+                <div class="bg-blue-600/5 border-l-4 border-blue-600 p-4 rounded-r-2xl mb-2">
+                  <p class="text-[9px] font-black uppercase text-blue-400 mb-1 tracking-widest">Official Playbook Directive</p>
+                  <p class="text-sm text-slate-300 leading-relaxed">${q.answer}</p>
+                </div>` : ''}
+              ${isModeratorMode ? `
+                <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-800/50">
+                  <button onclick="deployLive('${q.id}')" class="py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${q.status === 'live' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-red-600 hover:text-white'}">Deploy Live</button>
+                  <button onclick="resolveLive('${q.id}')" class="py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-slate-800 text-slate-400 hover:bg-green-600 hover:text-white transition-all">Resolve</button>
+                  <button onclick="respondLive('${q.id}')" class="py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-slate-800 text-slate-400 hover:bg-blue-600 hover:text-white transition-all">Respond</button>
+                </div>` : ''}
+            </div>`;
+        }).join('');
+      }
 
-              <div className="space-y-6">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-                  <h2 className="text-xs font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                    Active Field Logs ({questions.length})
-                  </h2>
+      function renderDashboard() {
+        const liveQ = currentQuestions.find(q => q.status === 'live');
+        if (!liveQ) {
+          dashboardContent.innerHTML = `
+            <div class="space-y-6 opacity-30">
+              <div class="w-32 h-32 bg-slate-800 rounded-[2.5rem] mx-auto animate-pulse flex items-center justify-center text-4xl">🏈</div>
+              <h1 class="text-5xl font-black uppercase tracking-tighter title-font">Huddle Up • Awaiting Selection</h1>
+              <p class="text-slate-500 uppercase tracking-[0.6em] font-bold text-sm">SME Playbook Sync Active</p>
+            </div>`;
+        } else {
+          dashboardContent.innerHTML = `
+            <div class="space-y-12">
+              <div class="inline-block px-8 py-3 bg-red-600 rounded-full text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-red-600/40 mb-6 animate-pulse">Live Broadcast</div>
+              <h2 class="text-8xl font-black leading-[1.05] title-font tracking-tight text-white drop-shadow-2xl">"${liveQ.text}"</h2>
+              <div class="flex items-center justify-center gap-12 pt-16 border-t border-slate-800/50">
+                <div class="text-left">
+                  <p class="text-[11px] font-black text-blue-500 uppercase tracking-widest mb-2">Field Tech</p>
+                  <p class="text-4xl font-black uppercase title-font text-white">${liveQ.author}</p>
                 </div>
+                <div class="w-px h-20 bg-slate-800"></div>
+                <div class="text-left">
+                  <p class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Inquiry Category</p>
+                  <p className="text-4xl font-black uppercase title-font text-slate-300">${liveQ.topic}</p>
+                </div>
+              </div>
+            </div>`;
+        }
+      }
+
+      // 6. Moderator Management Commands
+      window.deployLive = async function(id) {
+        const batch = db.batch();
+        currentQuestions.forEach((q) => {
+          if (q.status === 'live') {
+            batch.update(db.collection("questions").doc(q.id), { status: 'pending' });
+          }
+        });
+        batch.update(db.collection("questions").doc(id), { status: 'live' });
+        await batch.commit();
+      };
+
+      window.resolveLive = async function(id) {
+        await db.collection("questions").doc(id).update({ status: 'answered' });
+      };
+
+      window.respondLive = async function(id) {
+        const ans = prompt("Official SME Response (Syncs to Board):");
+        if (ans) {
+          await db.collection("questions").doc(id).update({ answer: ans, status: 'answered' });
+        }
+      };
+
+      document.getElementById('master-clear-btn').addEventListener('click', async () => {
+        if (!confirm("Confirm wiping entire real-time log stack?")) return;
+        const snapshot = await db.collection("questions").get();
+        const batch = db.batch();
+        snapshot.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      });
+
+      // 7. Identity Configuration Toggles
+      document.getElementById('view-tech-btn').addEventListener('click', () => {
+        isModeratorMode = false;
+        modToolbar.classList.add('hidden');
+        document.getElementById('submission-card').classList.remove('hidden');
+        document.getElementById('view-tech-btn').className = "px-4 py-1.5 rounded-md text-[10px] font-black uppercase bg-blue-600 text-white shadow-md";
+        document.getElementById('view-admin-btn').className = "px-4 py-1.5 rounded-md text-[10px] font-black uppercase text-slate-400 hover:text-white";
+        renderQueue();
+      });
+
+      document.getElementById('view-admin-btn').addEventListener('click', () => {
+        if (isModeratorMode) return;
+        const pass = prompt("Enter SME Authorization Code:");
+        if (pass === SME_PASSWORD) {
+          isModeratorMode = true;
+          modToolbar.classList.remove('hidden');
+          document.getElementById('submission-card').classList.add('hidden');
+          document.getElementById('view-admin-btn').className = "px-4 py-1.5 rounded-md text-[10px] font-black uppercase bg-red-600 text-white shadow-md";
+          document.getElementById('view-tech-btn').className = "px-4 py-1.5 rounded-md text-[10px] font-black uppercase text-slate-400 hover:text-white";
+          renderQueue();
+        } else if (pass !== null) {
+          alert("Incorrect security PIN profile credentials.");
+        }
+      });
+
+      document.getElementById('launch-dashboard-btn').addEventListener('click', () => {
+        mainHubView.classList.add('hidden');
+        dashboardView.classList.remove('hidden');
+      });
+
+      document.getElementById('exit-dashboard-btn').addEventListener('click', () => {
+        dashboardView.classList.add('hidden');
+        mainHubView.classList.remove('hidden');
+      });
+    </script>
+  </body>
+</html>

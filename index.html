@@ -5,8 +5,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Poppins:wght@700;900&display=swap" rel="stylesheet">
     
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -23,10 +23,10 @@
     </style>
   </head>
   <body class="custom-scrollbar">
+    
     <div id="root"></div>
 
-    <script type="text/babel">
-      // Wired to your exact nfl-tech-training-2026 database
+    <script>
       const firebaseConfig = {
         apiKey: "AIzaSyAeN_NiZC57eHDcU9pZcsmV6ka7UYOHZdE",
         authDomain: "nfl-tech-training-2026.firebaseapp.com",
@@ -37,10 +37,11 @@
         measurementId: "G-YPG7QLKGKM"
       };
 
-      // Initialize Firebase globally using standard compatibility layer
       firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore();
+      window.dbInstance = firebase.firestore();
+    </script>
 
+    <script type="text/babel" data-presets="react">
       const { useState, useEffect } = React;
       const SME_PASSWORD = "nfl2026admin";
 
@@ -58,9 +59,9 @@
         const [loading, setLoading] = useState(false);
         const [statusMsg, setStatusMsg] = useState('');
 
-        // FIREBASE STREAM
+        // Listen for data updates on the database collection
         useEffect(() => {
-          const unsubscribe = db.collection("questions")
+          const unsubscribe = window.dbInstance.collection("questions")
             .orderBy("rawTimestamp", "desc")
             .onSnapshot((snapshot) => {
               const dataList = [];
@@ -69,7 +70,7 @@
               });
               setQuestions(dataList);
             }, (error) => {
-              console.error("Firestore stream error:", error);
+              console.error("Firestore connection issue:", error);
             });
 
           return () => unsubscribe();
@@ -85,7 +86,7 @@
             const now = new Date();
             const timestampStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            await db.collection("questions").add({
+            await window.dbInstance.collection("questions").add({
               author: name || 'Anonymous Tech',
               topic: topic,
               text: question,
@@ -109,13 +110,13 @@
 
         const pushToDashboard = async (id) => {
           try {
-            const batch = db.batch();
+            const batch = window.dbInstance.batch();
             questions.forEach((q) => {
               if (q.status === 'live') {
-                batch.update(db.collection("questions").doc(q.id), { status: 'pending' });
+                batch.update(window.dbInstance.collection("questions").doc(q.id), { status: 'pending' });
               }
             });
-            batch.update(db.collection("questions").doc(id), { status: 'live' });
+            batch.update(window.dbInstance.collection("questions").doc(id), { status: 'live' });
             await batch.commit();
           } catch (err) {
             console.error(err);
@@ -123,21 +124,21 @@
         };
 
         const markDone = async (id) => {
-          await db.collection("questions").doc(id).update({ status: 'answered' });
+          await window.dbInstance.collection("questions").doc(id).update({ status: 'answered' });
         };
 
         const handleAnswer = async (id) => {
           const ans = prompt("Official SME Response (Syncs to Board):");
           if (ans) {
-            await db.collection("questions").doc(id).update({ answer: ans, status: 'answered' });
+            await window.dbInstance.collection("questions").doc(id).update({ answer: ans, status: 'answered' });
           }
         };
 
         const handleMasterClear = async () => {
           setLoading(true);
           try {
-            const snapshot = await db.collection("questions").get();
-            const batch = db.batch();
+            const snapshot = await window.dbInstance.collection("questions").get();
+            const batch = window.dbInstance.batch();
             snapshot.forEach((doc) => {
               batch.delete(doc.ref);
             });
@@ -295,58 +296,3 @@
                     Active Field Logs ({questions.length})
                   </h2>
                 </div>
-                
-                <div className="grid gap-5">
-                {questions.length === 0 ? (
-                  <div className="text-center py-20 border-2 border-dashed border-slate-800 rounded-[2.5rem] opacity-20">
-                    <p className="text-xs font-black uppercase tracking-[0.3em]">Channel Clear • No Log Entries</p>
-                  </div>
-                ) : questions.map(q => (
-                  <div key={q.id} className={`bg-slate-900 border rounded-[2rem] p-6 transition-all shadow-xl ${q.status === 'live' ? 'border-red-600 ring-2 ring-red-600/20' : 'border-slate-800 hover:border-slate-700'}`}>
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-xs font-black text-blue-400 border border-slate-700 uppercase">{q.author.charAt(0)}</div>
-                          <div>
-                            <p className="text-sm font-black text-slate-200 uppercase tracking-tight leading-tight">{q.author}</p>
-                            <p className="text-[9px] text-blue-500 font-black uppercase tracking-widest mt-1">{q.topic} • {q.timestamp}</p>
-                          </div>
-                        </div>
-                        <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter ${q.status === 'live' ? 'bg-red-600 text-white animate-pulse' : q.status === 'answered' ? 'bg-green-600/20 text-green-500' : 'bg-slate-800 text-slate-500'}`}>
-                          {q.status}
-                        </span>
-                    </div>
-                    
-                    <p className="text-sm text-white font-medium italic mb-6 leading-relaxed">"{q.text}"</p>
-                    
-                    {q.answer && (
-                      <div className="bg-blue-600/5 border-l-4 border-blue-600 p-4 rounded-r-2xl mb-2">
-                        <p className="text-[9px] font-black uppercase text-blue-400 mb-1 tracking-widest">Official Playbook Directive</p>
-                        <p className="text-sm text-slate-300 leading-relaxed">{q.answer}</p>
-                      </div>
-                    )}
-                    
-                    {view === 'moderator' && (
-                      <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-800/50">
-                        <button onClick={() => pushToDashboard(q.id)} className={`py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${q.status === 'live' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-red-600 hover:text-white'}`}>Deploy Live</button>
-                        <button onClick={() => markDone(q.id)} className="py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-slate-800 text-slate-400 hover:bg-green-600 hover:text-white transition-all">Resolve</button>
-                        <button onClick={() => handleAnswer(q.id)} className="py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-slate-800 text-slate-400 hover:bg-blue-600 hover:text-white transition-all">Respond</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                </div>
-              </div>
-            </main>
-
-            <footer className="p-12 text-center opacity-20">
-              <p className="text-[9px] font-black tracking-[0.6em] uppercase">Sony Sports • NFL Training Command Center</p>
-            </footer>
-          </div>
-        );
-      }
-
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<App />);
-    </script>
-  </body>
-</html>

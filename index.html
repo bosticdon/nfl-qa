@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <base target="_top">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL 2026 Tech Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Poppins:wght@700;900&display=swap" rel="stylesheet">
     
@@ -50,7 +50,7 @@
         <div id="submission-card" class="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 shadow-2xl space-y-6">
           <div>
             <h2 class="text-xs font-black uppercase text-blue-500 tracking-widest mb-1">Log Field Query</h2>
-            <p class="text-slate-500 text-[10px] uppercase font-bold tracking-tighter leading-tight">Your inquiry routes onto the active command board for rapid SME response.</p>
+            <p class="text-slate-500 text-[10px] uppercase font-bold tracking-tighter leading-tight">Select your current training block and tracking parameters below.</p>
           </div>
           <form id="qa-form" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -59,17 +59,31 @@
                 <input id="tech-name" required placeholder="Full Name (Company/Team)" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
               </div>
               <div class="space-y-1">
-                <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Infrastructure Category</label>
-                <select id="tech-topic" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-sm text-white outline-none appearance-none">
-                  <option value="Resource Allocation">Resource Allocation (Assignments)</option>
-                  <option value="Operations">Operations (Software/Process)</option>
-                  <option value="Hardware">Hardware Configurations</option>
+                <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Target Session Block</label>
+                <select id="tech-session" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-sm text-white outline-none appearance-none">
+                  <option value="Day 1 General Session: Hawk-Eye Updates">Day 1 General Session: Hawk-Eye Updates</option>
+                  <option value="Day 1 Back to Basics Part 1 (Replay)">Day 1 Back to Basics Part 1 (Replay)</option>
+                  <option value="Day 1 Back to Basics Part 2 (Tracking)">Day 1 Back to Basics Part 2 (Tracking)</option>
+                  <option value="Day 1 Hands-On">Day 1 Hands-On</option>
+                  <option value="Day 2 Overflow from Day 1 and Questions">Day 2 Overflow from Day 1 and Questions</option>
+                  <option value="Day 2 Communication">Day 2 Communication</option>
+                  <option value="H&S">H&S</option>
                 </select>
               </div>
             </div>
+
             <div class="space-y-1">
-              <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Query Parameters</label>
-              <textarea id="tech-question" required placeholder="State technical conditions clearly..." rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all"></textarea>
+              <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Topic Classification</label>
+              <select id="tech-topic" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-sm text-white outline-none appearance-none">
+                <option value="Ideas Competition Updates">Ideas Competition Updates</option>
+                <option value="Day 2 Admin">Day 2 Admin</option>
+                <option value="General Feedback / Technical Question">General Feedback / Technical Question</option>
+              </select>
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Query Parameters / Details</label>
+              <textarea id="tech-question" required placeholder="State training conditions clearly..." rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all"></textarea>
             </div>
             <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl uppercase text-xs tracking-[0.2em] transition-all shadow-lg shadow-blue-600/20">Send to Command</button>
             <p id="status-msg" class="text-center text-[10px] font-black uppercase text-green-500 tracking-widest hidden"></p>
@@ -83,8 +97,7 @@
               Active Field Logs (<span id="queue-count">0</span>)
             </h2>
           </div>
-          <div id="queue-container" class="grid gap-5">
-            </div>
+          <div id="queue-container" class="grid gap-5"></div>
         </div>
       </main>
 
@@ -95,15 +108,13 @@
 
     <div id="dashboard-view" class="hidden min-h-screen dashboard-bg flex flex-col items-center justify-center p-12 text-center relative overflow-hidden">
       <button id="exit-dashboard-btn" class="absolute top-8 right-8 text-slate-700 hover:text-slate-400 text-[10px] font-black uppercase tracking-widest">Exit Review Board</button>
-      <div id="dashboard-content" class="max-w-6xl w-full space-y-12 z-10 animate-in">
-        </div>
+      <div id="dashboard-content" class="max-w-6xl w-full space-y-12 z-10"></div>
       <div class="absolute bottom-12 left-1/2 -translate-x-1/2 opacity-20">
          <p class="text-[10px] font-black tracking-[1.2em] uppercase">Sony Sports • NFL Training Command</p>
       </div>
     </div>
 
     <script>
-      // 1. Initial Identity Credentials
       const firebaseConfig = {
         apiKey: "AIzaSyAeN_NiZC57eHDcU9pZcsmV6ka7UYOHZdE",
         authDomain: "nfl-tech-training-2026.firebaseapp.com",
@@ -121,19 +132,16 @@
       let isModeratorMode = false;
       const SME_PASSWORD = "nfl2026admin";
 
-      // 2. Element Selectors
       const form = document.getElementById('qa-form');
       const container = document.getElementById('queue-container');
       const countLabel = document.getElementById('queue-count');
       const statusMsg = document.getElementById('status-msg');
       const modToolbar = document.getElementById('moderator-toolbar');
       
-      // View switches
       const mainHubView = document.getElementById('main-hub-view');
       const dashboardView = document.getElementById('dashboard-view');
       const dashboardContent = document.getElementById('dashboard-content');
 
-      // 3. Setup Live Firestore Database Pipeline
       db.collection("questions")
         .orderBy("rawTimestamp", "desc")
         .onSnapshot((snapshot) => {
@@ -144,15 +152,14 @@
           renderQueue();
           renderDashboard();
         }, (error) => {
-          console.error("Firestore stream failure:", error);
+          console.error("Firestore stream error:", error);
         });
 
-      // 4. Form Submission Action
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = document.getElementById('submit-btn');
-        
         const nameInput = document.getElementById('tech-name').value;
+        const sessionInput = document.getElementById('tech-session').value;
         const topicInput = document.getElementById('tech-topic').value;
         const questionInput = document.getElementById('tech-question').value;
 
@@ -165,6 +172,7 @@
 
           await db.collection("questions").add({
             author: nameInput || 'Anonymous Tech',
+            session: sessionInput,
             topic: topicInput,
             text: questionInput,
             timestamp: timestampStr,
@@ -180,14 +188,13 @@
           setTimeout(() => statusMsg.classList.add('hidden'), 5000);
         } catch (err) {
           console.error(err);
-          alert("Error processing field document data submission.");
+          alert("Error sending submission to cloud storage.");
         } finally {
           submitBtn.disabled = false;
           submitBtn.innerText = "Send to Command";
         }
       });
 
-      // 5. Layout Painters
       function renderQueue() {
         countLabel.innerText = currentQuestions.length;
         if (currentQuestions.length === 0) {
@@ -209,7 +216,7 @@
                   <div class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-xs font-black text-blue-400 border border-slate-700 uppercase">${q.author.charAt(0)}</div>
                   <div>
                     <p class="text-sm font-black text-slate-200 uppercase tracking-tight leading-tight">${q.author}</p>
-                    <p class="text-[9px] text-blue-500 font-black uppercase tracking-widest mt-1">${q.topic} • ${q.timestamp}</p>
+                    <p class="text-[9px] text-blue-500 font-black uppercase tracking-widest mt-1">${q.session || 'General'} • ${q.topic} • ${q.timestamp}</p>
                   </div>
                 </div>
                 <span class="text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter ${badgeStyle}">${q.status}</span>
@@ -242,7 +249,7 @@
         } else {
           dashboardContent.innerHTML = `
             <div class="space-y-12">
-              <div class="inline-block px-8 py-3 bg-red-600 rounded-full text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-red-600/40 mb-6 animate-pulse">Live Broadcast</div>
+              <div class="inline-block px-8 py-3 bg-red-600 rounded-full text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-red-600/40 mb-6">Live Broadcast</div>
               <h2 class="text-8xl font-black leading-[1.05] title-font tracking-tight text-white drop-shadow-2xl">"${liveQ.text}"</h2>
               <div class="flex items-center justify-center gap-12 pt-16 border-t border-slate-800/50">
                 <div class="text-left">
@@ -251,15 +258,14 @@
                 </div>
                 <div class="w-px h-20 bg-slate-800"></div>
                 <div class="text-left">
-                  <p class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Inquiry Category</p>
-                  <p className="text-4xl font-black uppercase title-font text-slate-300">${liveQ.topic}</p>
+                  <p class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Session Block & Topic</p>
+                  <p class="text-4xl font-black uppercase title-font text-slate-300">${liveQ.session || 'General'} • ${liveQ.topic}</p>
                 </div>
               </div>
             </div>`;
         }
       }
 
-      // 6. Moderator Management Commands
       window.deployLive = async function(id) {
         const batch = db.batch();
         currentQuestions.forEach((q) => {
@@ -290,7 +296,6 @@
         await batch.commit();
       });
 
-      // 7. Identity Configuration Toggles
       document.getElementById('view-tech-btn').addEventListener('click', () => {
         isModeratorMode = false;
         modToolbar.classList.add('hidden');
@@ -311,7 +316,7 @@
           document.getElementById('view-tech-btn').className = "px-4 py-1.5 rounded-md text-[10px] font-black uppercase text-slate-400 hover:text-white";
           renderQueue();
         } else if (pass !== null) {
-          alert("Incorrect security PIN profile credentials.");
+          alert("Incorrect security PIN credentials.");
         }
       });
 

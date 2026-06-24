@@ -9,6 +9,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
     <style>
       body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; overflow-x: hidden; }
@@ -45,6 +46,17 @@
             <div class="w-10 h-10 rounded-2xl bg-red-600/10 flex items-center justify-center text-red-500 group-hover:bg-red-600 group-hover:text-white transition-all text-xl">📋</div>
             <span class="text-[10px] font-black uppercase tracking-[0.2em]">Reset Field Data</span>
           </button>
+        </div>
+
+        <div class="bg-slate-900 rounded-3xl p-6 border border-slate-800 shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div>
+            <p class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Authentication Profile</p>
+            <p id="auth-status-text" class="text-sm font-bold text-slate-300 mt-1">Checking session status...</p>
+          </div>
+          <div class="flex gap-2">
+            <button id="login-google-btn" class="hidden px-4 py-2 bg-white text-slate-900 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-all">Sign In with Google</button>
+            <button id="logout-btn" class="hidden px-4 py-2 bg-slate-800 text-slate-400 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all">Sign Out</button>
+          </div>
         </div>
 
         <div id="submission-card" class="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 shadow-2xl space-y-6">
@@ -122,6 +134,7 @@
 
       firebase.initializeApp(firebaseConfig);
       const db = firebase.firestore();
+      const auth = firebase.auth();
       
       let currentQuestions = [];
       let isModeratorMode = false;
@@ -137,6 +150,12 @@
       const dashboardView = document.getElementById('dashboard-view');
       const dashboardContent = document.getElementById('dashboard-content');
 
+      const nameInputEl = document.getElementById('tech-name');
+      const statusTextEl = document.getElementById('auth-status-text');
+      const googleBtnEl = document.getElementById('login-google-btn');
+      const logoutBtnEl = document.getElementById('logout-btn');
+
+      // Realtime Database Sync
       db.collection("questions")
         .orderBy("rawTimestamp", "desc")
         .onSnapshot((snapshot) => {
@@ -150,10 +169,68 @@
           console.error("Firestore stream error:", error);
         });
 
+      // CORE IDENTITY MONITORS (Tracks user auth changes)
+      auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          logoutBtnEl.classList.remove('hidden');
+          googleBtnEl.classList.add('hidden');
+
+          if (user.isAnonymous) {
+            // User is anonymous: Check local memory device records
+            statusTextEl.innerText = "Logged anonymously (Device Remembered)";
+            const rememberedName = localStorage.getItem('nfl_saved_tech_name');
+            if (rememberedName) {
+              nameInputEl.value = rememberedName;
+              nameInputEl.classList.add('border-green-600/50', 'bg-slate-800/50');
+            }
+          } else {
+            // User is authenticated with Google: lock in verified details
+            statusTextEl.innerText = `Verified Profile: ${user.email}`;
+            nameInputEl.value = user.displayName || "";
+            nameInputEl.disabled = true; // Lock the text field for Google accounts
+            nameInputEl.classList.add('opacity-60', 'bg-slate-950', 'border-blue-600/40');
+          }
+        } else {
+          // No profile session found -> Silently log in anonymously to lock down the session ID
+          logoutBtnEl.classList.add('hidden');
+          googleBtnEl.classList.remove('hidden');
+          statusTextEl.innerText = "Configuring secure system guest connection...";
+          try {
+            await auth.signInAnonymously();
+          } catch (err) {
+            console.error("Auth routing issue:", err);
+          }
+        }
+      });
+
+      // Sign In Action Triggers
+      googleBtnEl.addEventListener('click', () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(err => alert("Google Portal Cancelled: " + err.message));
+      });
+
+      logoutBtnEl.addEventListener('click', () => {
+        if(confirm("Confirm logging out of profile session?")) {
+          nameInputEl.disabled = false;
+          nameInputEl.value = "";
+          nameInputEl.className = "w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all";
+          auth.signOut();
+        }
+      });
+
+      // Save name dynamically for anonymous users
+      nameInputEl.addEventListener('input', (e) => {
+        const currentUser = auth.currentUser;
+        if (currentUser && currentUser.isAnonymous) {
+          localStorage.setItem('nfl_saved_tech_name', e.target.value);
+        }
+      });
+
+      // Form Action Processing
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = document.getElementById('submit-btn');
-        const nameInput = document.getElementById('tech-name').value;
+        const nameInput = nameInputEl.value;
         const sessionInput = document.getElementById('tech-session').value;
         const topicInput = document.getElementById('tech-topic').value;
         const questionInput = document.getElementById('tech-question').value;
@@ -206,4 +283,124 @@
           
           return `
             <div class="bg-slate-900 border rounded-[2rem] p-6 transition-all shadow-xl ${liveStyle}">
-              <div class="flex justify-between items-start mb-4
+              <div class="flex justify-between items-start mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-xs font-black text-blue-400 border border-slate-700 uppercase">${q.author.charAt(0)}</div>
+                  <div>
+                    <p class="text-sm font-black text-slate-200 uppercase tracking-tight leading-tight">${q.author}</p>
+                    <p class="text-[9px] text-blue-500 font-black uppercase tracking-widest mt-1">${q.session || 'General'} • ${q.topic} • ${q.timestamp}</p>
+                  </div>
+                </div>
+                <span class="text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter ${badgeStyle}">${q.status}</span>
+              </div>
+              <p class="text-sm text-white font-medium italic mb-6 leading-relaxed">"${q.text}"</p>
+              ${q.answer ? `
+                <div class="bg-blue-600/5 border-l-4 border-blue-600 p-4 rounded-r-2xl mb-2">
+                  <p class="text-[9px] font-black uppercase text-blue-400 mb-1 tracking-widest">Official Playbook Directive</p>
+                  <p class="text-sm text-slate-300 leading-relaxed">${q.answer}</p>
+                </div>` : ''}
+              ${isModeratorMode ? `
+                <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-800/50">
+                  <button onclick="deployLive('${q.id}')" class="py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${q.status === 'live' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-red-600 hover:text-white'}">Deploy Live</button>
+                  <button onclick="resolveLive('${q.id}')" class="py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-slate-800 text-slate-400 hover:bg-green-600 hover:text-white transition-all">Resolve</button>
+                  <button onclick="respondLive('${q.id}')" class="py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-slate-800 text-slate-400 hover:bg-blue-600 hover:text-white transition-all">Respond</button>
+                </div>` : ''}
+            </div>`;
+        }).join('');
+      }
+
+      function renderDashboard() {
+        const liveQ = currentQuestions.find(q => q.status === 'live');
+        if (!liveQ) {
+          dashboardContent.innerHTML = `
+            <div class="space-y-6 opacity-30">
+              <div class="w-32 h-32 bg-slate-800 rounded-[2.5rem] mx-auto animate-pulse flex items-center justify-center text-4xl">🏈</div>
+              <h1 class="text-5xl font-black uppercase tracking-tighter title-font">Huddle Up • Awaiting Selection</h1>
+              <p class="text-slate-500 uppercase tracking-[0.6em] font-bold text-sm">Admin Playbook Sync Active</p>
+            </div>`;
+        } else {
+          dashboardContent.innerHTML = `
+            <div class="space-y-12">
+              <div class="inline-block px-8 py-3 bg-red-600 rounded-full text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-red-600/40 mb-6">Live Broadcast</div>
+              <h2 class="text-8xl font-black leading-[1.05] title-font tracking-tight text-white drop-shadow-2xl">"${liveQ.text}"</h2>
+              <div class="flex items-center justify-center gap-12 pt-16 border-t border-slate-800/50">
+                <div class="text-left">
+                  <p class="text-[11px] font-black text-blue-500 uppercase tracking-widest mb-2">Tech Guarantee</p>
+                  <p class="text-4xl font-black uppercase title-font text-white">${liveQ.author}</p>
+                </div>
+                <div class="w-px h-20 bg-slate-800"></div>
+                <div class="text-left">
+                  <p class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Session Block & Topic</p>
+                  <p class="text-4xl font-black uppercase title-font text-slate-300">${liveQ.session || 'General'} • ${liveQ.topic}</p>
+                </div>
+              </div>
+            </div>`;
+        }
+      }
+
+      window.deployLive = async function(id) {
+        const batch = db.batch();
+        currentQuestions.forEach((q) => {
+          if (q.status === 'live') {
+            batch.update(db.collection("questions").doc(q.id), { status: 'pending' });
+          }
+        });
+        batch.update(db.collection("questions").doc(id), { status: 'live' });
+        await batch.commit();
+      };
+
+      window.resolveLive = async function(id) {
+        await db.collection("questions").doc(id).update({ status: 'answered' });
+      };
+
+      window.respondLive = async function(id) {
+        const ans = prompt("Official Admin Response (Syncs to Board):");
+        if (ans) {
+          await db.collection("questions").doc(id).update({ answer: ans, status: 'answered' });
+        }
+      };
+
+      document.getElementById('master-clear-btn').addEventListener('click', async () => {
+        if (!confirm("Confirm wiping entire real-time log stack?")) return;
+        const snapshot = await db.collection("questions").get();
+        const batch = db.batch();
+        snapshot.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      });
+
+      document.getElementById('view-tech-btn').addEventListener('click', () => {
+        isModeratorMode = false;
+        modToolbar.classList.add('hidden');
+        document.getElementById('submission-card').classList.remove('hidden');
+        document.getElementById('view-tech-btn').className = "px-4 py-1.5 rounded-md text-[10px] font-black uppercase bg-blue-600 text-white shadow-md";
+        document.getElementById('view-admin-btn').className = "px-4 py-1.5 rounded-md text-[10px] font-black uppercase text-slate-400 hover:text-white";
+        renderQueue();
+      });
+
+      document.getElementById('view-admin-btn').addEventListener('click', () => {
+        if (isModeratorMode) return;
+        const pass = prompt("Enter Admin Authorization Code:");
+        if (pass === SME_PASSWORD) {
+          isModeratorMode = true;
+          modToolbar.classList.remove('hidden');
+          document.getElementById('submission-card').classList.add('hidden');
+          document.getElementById('view-admin-btn').className = "px-4 py-1.5 rounded-md text-[10px] font-black uppercase bg-red-600 text-white shadow-md";
+          document.getElementById('view-tech-btn').className = "px-4 py-1.5 rounded-md text-[10px] font-black uppercase text-slate-400 hover:text-white";
+          renderQueue();
+        } else if (pass !== null) {
+          alert("Incorrect security PIN credentials.");
+        }
+      });
+
+      document.getElementById('launch-dashboard-btn').addEventListener('click', () => {
+        mainHubView.classList.add('hidden');
+        dashboardView.classList.remove('hidden');
+      });
+
+      document.getElementById('exit-dashboard-btn').addEventListener('click', () => {
+        dashboardView.classList.add('hidden');
+        mainHubView.classList.remove('hidden');
+      });
+    </script>
+  </body>
+</html>

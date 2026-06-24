@@ -1,11 +1,17 @@
+<!DOCTYPE html>
 <html>
   <head>
     <base target="_top">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Poppins:wght@700;900&display=swap" rel="stylesheet">
+    
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
     <style>
       body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; overflow-x: hidden; }
       .title-font { font-family: 'Poppins', sans-serif; }
@@ -19,27 +25,22 @@
   <body class="custom-scrollbar">
     <div id="root"></div>
 
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-      import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, writeBatch, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-      // ⚠️ REMEMBER TO REPLACE THESE PROPS WITH YOUR FIREBASE CONFIG KEYS
+    <script type="text/babel">
+      // Wired to your exact nfl-tech-training-2026 database
       const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT_ID.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
+        apiKey: "AIzaSyAeN_NiZC57eHDcU9pZcsmV6ka7UYOHZdE",
+        authDomain: "nfl-tech-training-2026.firebaseapp.com",
+        projectId: "nfl-tech-training-2026",
+        storageBucket: "nfl-tech-training-2026.firebasestorage.app",
+        messagingSenderId: "1078301503876",
+        appId: "1:1078301503876:web:7ddb463a6e2f33c2e2add1",
+        measurementId: "G-YPG7QLKGKM"
       };
 
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
+      // Initialize Firebase globally using standard compatibility layer
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
 
-      window.db_actions = { collection, addDoc, onSnapshot, doc, updateDoc, writeBatch, getDocs, query, orderBy, db };
-    </script>
-
-    <script type="text/babel">
       const { useState, useEffect } = React;
       const SME_PASSWORD = "nfl2026admin";
 
@@ -57,21 +58,22 @@
         const [loading, setLoading] = useState(false);
         const [statusMsg, setStatusMsg] = useState('');
 
+        // FIREBASE STREAM
         useEffect(() => {
-          if (!window.db_actions) return;
-          const { db, collection, onSnapshot, query, orderBy } = window.db_actions;
-          
-          const q = query(collection(db, "questions"), orderBy("rawTimestamp", "desc"));
-          const unsubscribe = onSnapshot(q, (snapshot) => {
-            const dataList = [];
-            snapshot.forEach((doc) => {
-              dataList.push({ id: doc.id, ...doc.data() });
+          const unsubscribe = db.collection("questions")
+            .orderBy("rawTimestamp", "desc")
+            .onSnapshot((snapshot) => {
+              const dataList = [];
+              snapshot.forEach((doc) => {
+                dataList.push({ id: doc.id, ...doc.data() });
+              });
+              setQuestions(dataList);
+            }, (error) => {
+              console.error("Firestore stream error:", error);
             });
-            setQuestions(dataList);
-          });
 
           return () => unsubscribe();
-        }, [window.db_actions]);
+        }, []);
 
         const handleSubmit = async (e) => {
           e.preventDefault();
@@ -80,11 +82,10 @@
           setStatusMsg('Transmitting Play...');
           
           try {
-            const { db, collection, addDoc } = window.db_actions;
             const now = new Date();
             const timestampStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            await addDoc(collection(db, "questions"), {
+            await db.collection("questions").add({
               author: name || 'Anonymous Tech',
               topic: topic,
               text: question,
@@ -107,36 +108,38 @@
         };
 
         const pushToDashboard = async (id) => {
-          const { db, doc, updateDoc } = window.db_actions;
-          questions.forEach(async (q) => {
-            if (q.status === 'live') {
-              await updateDoc(doc(db, "questions", q.id), { status: 'pending' });
-            }
-          });
-          await updateDoc(doc(db, "questions", id), { status: 'live' });
+          try {
+            const batch = db.batch();
+            questions.forEach((q) => {
+              if (q.status === 'live') {
+                batch.update(db.collection("questions").doc(q.id), { status: 'pending' });
+              }
+            });
+            batch.update(db.collection("questions").doc(id), { status: 'live' });
+            await batch.commit();
+          } catch (err) {
+            console.error(err);
+          }
         };
 
         const markDone = async (id) => {
-          const { db, doc, updateDoc } = window.db_actions;
-          await updateDoc(doc(db, "questions", id), { status: 'answered' });
+          await db.collection("questions").doc(id).update({ status: 'answered' });
         };
 
         const handleAnswer = async (id) => {
           const ans = prompt("Official SME Response (Syncs to Board):");
           if (ans) {
-            const { db, doc, updateDoc } = window.db_actions;
-            await updateDoc(doc(db, "questions", id), { answer: ans, status: 'answered' });
+            await db.collection("questions").doc(id).update({ answer: ans, status: 'answered' });
           }
         };
 
         const handleMasterClear = async () => {
           setLoading(true);
           try {
-            const { db, collection, getDocs, doc, writeBatch } = window.db_actions;
-            const snapshot = await getDocs(collection(db, "questions"));
-            const batch = writeBatch(db);
-            snapshot.forEach((snapshotDoc) => {
-              batch.delete(doc(db, "questions", snapshotDoc.id));
+            const snapshot = await db.collection("questions").get();
+            const batch = db.batch();
+            snapshot.forEach((doc) => {
+              batch.delete(doc.ref);
             });
             await batch.commit();
             setShowClearConfirm(false);
@@ -342,10 +345,8 @@
         );
       }
 
-      setTimeout(() => {
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-      }, 1000);
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
     </script>
   </body>
 </html>

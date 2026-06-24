@@ -49,13 +49,13 @@
 
         <div id="submission-card" class="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 shadow-2xl space-y-6">
           <div>
-            <h2 class="text-xs font-black uppercase text-blue-500 tracking-widest mb-1">Log Field Query</h2>
-            <p class="text-slate-500 text-[10px] uppercase font-bold tracking-tighter leading-tight">Enter your name and details below to update the live command board.</p>
+            <h2 class="text-base font-black uppercase text-blue-500 tracking-widest mb-1">FTT Q&A</h2>
+            <p class="text-slate-500 text-[10px] uppercase font-bold tracking-tighter leading-tight">Enter your parameters below to update the live command board.</p>
           </div>
           <form id="qa-form" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="space-y-1">
-                <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Tech Guarantee Identifier</label>
+                <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">TG Name</label>
                 <input id="tech-name" required placeholder="Full Name (Company/Team)" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
               </div>
               <div class="space-y-1">
@@ -77,7 +77,7 @@
             </div>
 
             <div class="space-y-1">
-              <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Query Parameters / Details</label>
+              <label class="text-[9px] font-black text-slate-600 uppercase ml-2 tracking-widest">Query: Question</label>
               <textarea id="tech-question" required placeholder="State training conditions clearly..." rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all"></textarea>
             </div>
             <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl uppercase text-xs tracking-[0.2em] transition-all shadow-lg shadow-blue-600/20">Send to Command</button>
@@ -138,18 +138,15 @@
       const dashboardContent = document.getElementById('dashboard-content');
       const nameInputEl = document.getElementById('tech-name');
 
-      // Check local memory to auto-fill their last used name
       const rememberedName = localStorage.getItem('nfl_saved_tech_name');
       if (rememberedName) {
         nameInputEl.value = rememberedName;
       }
 
-      // Remember names as they type
       nameInputEl.addEventListener('input', (e) => {
         localStorage.setItem('nfl_saved_tech_name', e.target.value);
       });
 
-      // Realtime Database Connection
       db.collection("questions")
         .orderBy("rawTimestamp", "desc")
         .onSnapshot((snapshot) => {
@@ -163,7 +160,6 @@
           console.error("Firestore stream error:", error);
         });
 
-      // Form Processing Action
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = document.getElementById('submit-btn');

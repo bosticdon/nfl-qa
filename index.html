@@ -137,18 +137,17 @@
       const dashboardContent = document.getElementById('dashboard-content');
       const nameInputEl = document.getElementById('tech-name');
 
-      // Autofill name from local storage memory if it exists
+      // Recover name from local cache
       const rememberedName = localStorage.getItem('nfl_saved_tech_name');
       if (rememberedName) {
         nameInputEl.value = rememberedName;
       }
 
-      // Track layout typing changes
       nameInputEl.addEventListener('input', (e) => {
         localStorage.setItem('nfl_saved_tech_name', e.target.value);
       });
 
-      // Stream data in real-time from Firestore database collection
+      // Stream Listener Connection
       db.collection("questions")
         .orderBy("rawTimestamp", "desc")
         .onSnapshot((snapshot) => {
@@ -162,7 +161,7 @@
           console.error("Firestore stream error:", error);
         });
 
-      // Core submit handler
+      // Form Processing Action
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = document.getElementById('submit-btn');
@@ -232,7 +231,7 @@
               <p class="text-sm text-white font-medium italic mb-6 leading-relaxed">"${q.text}"</p>
               ${q.answer ? `
                 <div class="bg-blue-600/5 border-l-4 border-blue-600 p-4 rounded-r-2xl mb-2">
-                  <p class="text-[9px] font-black uppercase text-blue-400 mb-1 tracking-widest">Official Admin Playbook Directive</p>
+                  <p class="text-[9px] font-black uppercase text-blue-400 mb-1 tracking-widest">Official Admin Response</p>
                   <p class="text-sm text-slate-300 leading-relaxed">${q.answer}</p>
                 </div>` : ''}
               ${isModeratorMode ? `
@@ -282,7 +281,7 @@
           }
         });
         batch.update(db.collection("questions").doc(id), { status: 'live' });
-        await db.commit();
+        await batch.commit();
       };
 
       window.resolveLive = async function(id) {

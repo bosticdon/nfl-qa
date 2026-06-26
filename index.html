@@ -67,25 +67,24 @@
 
       <main class="max-w-3xl mx-auto w-full p-6 space-y-8 flex-grow">
         <div id="moderator-toolbar" class="hidden flex gap-3 mb-8">
-          <button id="launch-dashboard-btn" class="flex-1 bg-slate-900 border border-slate-800 hover:border-blue-500 py-6 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all group shadow-xl">
-            <div class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500 group-hover:bg-brand-primary group-hover:text-white transition-all text-xl">📺</div>
-            <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 group-hover:text-white">Review Board Mode</span>
-          </button>
-          <button id="master-clear-btn" class="flex-1 bg-slate-900 border border-slate-800 hover:border-red-500 py-6 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all group shadow-xl">
+          <button id="master-clear-btn" class="w-full bg-slate-900 border border-slate-800 hover:border-red-500 py-6 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all group shadow-xl">
             <div class="w-10 h-10 rounded-2xl bg-red-600/10 flex items-center justify-center text-red-500 group-hover:bg-red-600 group-hover:text-white transition-all text-xl">📋</div>
             <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 group-hover:text-white">Reset Field Data</span>
           </button>
         </div>
 
-        <div id="submission-card" class="bg-brand-mono-light rounded-[2.5rem] p-8 shadow-2xl space-y-6">
-          <div class="relative w-full rounded-3xl overflow-hidden bg-[#0A0A0A] h-36 flex items-center justify-between p-8 shadow-inner border border-slate-800">
-            <div class="absolute inset-0 bg-gradient-to-r from-[#0A0A0A] via-[#111111] to-[#0A0A0A]"></div>
-            <div class="relative z-10 space-y-1">
-              <span class="brand-breadcrumb uppercase tracking-widest block text-white/70">Sony Sports • Command Node</span>
-              <h2 class="brand-headline uppercase text-white leading-none">FTT Q&A</h2>
+      <div id="submission-card" class="bg-brand-mono-light rounded-[2.5rem] p-8 shadow-2xl space-y-6">
+          
+          <div class="relative w-full rounded-3xl overflow-hidden bg-[#0A0A0A] min-h-[9rem] sm:h-36 flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 sm:p-8 shadow-inner border border-slate-800">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#0A0A0A] via-[#111111] to-[#0A0A0A] z-0"></div>
+            
+            <div class="relative z-20 space-y-1 mb-4 sm:mb-0 max-w-[85%] sm:max-w-[50%]">
+              <span class="text-[12px] font-bold uppercase tracking-widest block text-white/70" style="line-height: 1;">Sony Sports • Command Node</span>
+              <h2 class="text-[32px] font-black uppercase text-white leading-none tracking-tight">FTT Q&A</h2>
             </div>
-            <div class="absolute right-0 top-0 bottom-0 h-full w-1/2 pointer-events-none z-0">
-              <img src="assets/Hawkeye-TW-Cover_1500x500_WIP4.png" alt="Hawkeye Branding Logo" class="w-full h-full object-cover object-right opacity-80" />
+
+            <div class="absolute right-0 top-0 bottom-0 h-full w-1/2 sm:w-1/2 pointer-events-none z-10">
+              <img src="assets/Hawkeye-TW-Cover_1500x500_WIP4.png" alt="Hawkeye Branding Logo" class="w-full h-full object-contain sm:object-cover object-right opacity-90" />
             </div>
           </div>
 
@@ -149,14 +148,6 @@
       </footer>
     </div>
 
-    <div id="dashboard-view" class="hidden min-h-screen dashboard-bg flex flex-col items-center justify-center p-12 text-center relative overflow-hidden">
-      <button id="exit-dashboard-btn" class="absolute top-8 right-8 text-slate-500 hover:text-slate-300 text-[10px] font-bold uppercase tracking-widest">Exit Review Board</button>
-      <div id="dashboard-content" class="max-w-6xl w-full space-y-12 z-10"></div>
-      <div class="absolute bottom-12 left-1/2 -translate-x-1/2 opacity-20">
-         <p class="text-[10px] font-bold tracking-[1.2em] uppercase text-white">Sony Sports • NFL Training Command</p>
-      </div>
-    </div>
-
     <script>
       const firebaseConfig = {
         apiKey: "AIzaSyAeN_NiZC57eHDcU9pZcsmV6ka7UYOHZdE",
@@ -182,10 +173,6 @@
       const countLabel = document.getElementById('queue-count');
       const statusMsg = document.getElementById('status-msg');
       const modToolbar = document.getElementById('moderator-toolbar');
-      
-      const mainHubView = document.getElementById('main-hub-view');
-      const dashboardView = document.getElementById('dashboard-view');
-      const dashboardContent = document.getElementById('dashboard-content');
       const nameInputEl = document.getElementById('tech-name');
 
       const rememberedName = localStorage.getItem('nfl_saved_tech_name');
@@ -205,7 +192,6 @@
             currentQuestions.push({ id: doc.id, ...doc.data() });
           });
           renderQueue();
-          renderDashboard();
         }, (error) => {
           console.error("Firestore stream error:", error);
         });
@@ -251,10 +237,8 @@
         }
       });
 
-      // FEATURE 2: REALTIME UPVOTE RUNTIME INCREMENTOR
       window.upvoteQuestion = async function(id, currentVotes) {
         const upvoteButton = document.getElementById(`upvote-btn-${id}`);
-        // Visual protection filter block to prevent double spamming inputs
         if (localStorage.getItem(`upvoted_${id}`)) {
           alert("You have already synced an agreement verification vote to this entry track.");
           return;
@@ -272,16 +256,13 @@
       };
 
       function renderQueue() {
-        // Separate Pinned items (answered/resolved) from Live Active items (pending/live)
         const activeItems = currentQuestions.filter(q => q.status === 'pending' || q.status === 'live');
         const pinnedItems = currentQuestions.filter(q => q.status === 'answered');
 
         countLabel.innerText = activeItems.length;
-
-        // Auto-Sort Active Queue by Upvote Volume Track Count
         activeItems.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
 
-        // Render Pinned Dashboard Component FAQ Frame Block
+        // Render Pinned FAQs with Admin Edit Abilities Toggled In
         if (pinnedItems.length > 0) {
           pinnedZone.classList.remove('hidden');
           pinnedContainer.innerHTML = pinnedItems.map(q => `
@@ -291,7 +272,10 @@
                   <p class="text-xs font-bold text-slate-300 uppercase">${q.author}</p>
                   <p class="text-[9px] text-emerald-500 font-bold uppercase tracking-wider mt-0.5">${q.session} • ${q.topic}</p>
                 </div>
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 uppercase tracking-widest">PINNED DIRECTIVE</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 uppercase tracking-widest">PINNED DIRECTIVE</span>
+                  ${isModeratorMode ? `<button onclick="respondLive('${q.id}')" class="text-[10px] text-brand-primary hover:underline font-bold uppercase tracking-wider">Edit Answer</button>` : ''}
+                </div>
               </div>
               <p class="text-sm text-white italic font-medium my-3">"${q.text}"</p>
               <div class="bg-brand-primary/10 border-l-4 border-brand-primary p-3 rounded-r-xl">
@@ -304,7 +288,6 @@
           pinnedZone.classList.add('hidden');
         }
 
-        // Render Primary Active Timeline
         if (activeItems.length === 0) {
           container.innerHTML = `
             <div class="text-center py-20 border-2 border-dashed border-slate-800 rounded-[2.5rem] opacity-20">
@@ -315,7 +298,6 @@
 
         container.innerHTML = activeItems.map(q => {
           let liveStyle = q.status === 'live' ? 'border-[#1D5DF3] ring-4 ring-[#1D5DF3]/20' : 'border-slate-800 hover:border-slate-700';
-          let badgeStyle = q.status === 'live' ? 'bg-red-600 text-white animate-pulse' : 'bg-slate-800 text-slate-500';
           let hasUpvoted = localStorage.getItem(`upvoted_${q.id}`);
           let voteBtnStyle = hasUpvoted ? 'bg-brand-tint/20 text-brand-tint border-brand-tint/40' : 'bg-slate-800 text-slate-300 hover:bg-brand-tint border-slate-700';
           
@@ -337,8 +319,7 @@
               <p class="text-sm text-white font-medium italic mb-6 leading-relaxed">"${q.text}"</p>
               
               ${isModeratorMode ? `
-                <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-800/50">
-                  <button onclick="deployLive('${q.id}')" class="py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all ${q.status === 'live' ? 'bg-brand-primary text-white' : 'bg-slate-800 text-slate-400 hover:bg-brand-primary hover:text-white'}">Deploy Live</button>
+                <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-800/50">
                   <button onclick="resolveLive('${q.id}')" class="py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest bg-slate-800 text-slate-400 hover:bg-emerald-600 hover:text-white transition-all">Pin Archive</button>
                   <button onclick="respondLive('${q.id}')" class="py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest bg-slate-800 text-slate-400 hover:bg-brand-tint hover:text-white transition-all">Respond & Pin</button>
                 </div>` : ''}
@@ -346,54 +327,20 @@
         }).join('');
       }
 
-      function renderDashboard() {
-        const liveQ = currentQuestions.find(q => q.status === 'live');
-        if (!liveQ) {
-          dashboardContent.innerHTML = `
-            <div class="space-y-6 opacity-30">
-              <div class="w-32 h-32 bg-slate-800 rounded-[2.5rem] mx-auto animate-pulse flex items-center justify-center text-4xl">🏈</div>
-              <h1 class="text-5xl font-bold uppercase tracking-tighter text-white">Huddle Up • Awaiting Selection</h1>
-              <p class="text-slate-500 uppercase tracking-[0.6em] font-bold text-sm">Admin Playbook Sync Active</p>
-            </div>`;
-        } else {
-          dashboardContent.innerHTML = `
-            <div class="space-y-12">
-              <div class="inline-block px-8 py-3 bg-brand-primary rounded-full text-[11px] font-bold uppercase tracking-[0.4em] shadow-2xl shadow-blue-600/40 mb-6">Live Broadcast</div>
-              <h2 class="text-7xl font-bold leading-[1.05] tracking-tight text-white drop-shadow-2xl">"${liveQ.text}"</h2>
-              <div class="flex items-center justify-center gap-12 pt-16 border-t border-slate-800/50">
-                <div class="text-left">
-                  <p class="text-[11px] font-bold text-[#1D5DF3] uppercase tracking-widest mb-2">Tech Guarantee</p>
-                  <p class="text-4xl font-bold uppercase text-white">${liveQ.author}</p>
-                </div>
-                <div class="w-px h-20 bg-slate-800"></div>
-                <div class="text-left">
-                  <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">Session Block & Topic</p>
-                  <p class="text-4xl font-bold uppercase text-slate-300">${liveQ.session || 'General'} • ${liveQ.topic}</p>
-                </div>
-              </div>
-            </div>`;
-        }
-      }
-
-      window.deployLive = async function(id) {
-        const batch = db.batch();
-        currentQuestions.forEach((q) => {
-          if (q.status === 'live') {
-            batch.update(db.collection("questions").doc(q.id), { status: 'pending' });
-          }
-        });
-        batch.update(db.collection("questions").doc(id), { status: 'live' });
-        await batch.commit();
-      };
-
       window.resolveLive = async function(id) {
         await db.collection("questions").doc(id).update({ status: 'answered' });
       };
 
+      // REALTIME INPUT EDIT RETRIEVAL HOOK
       window.respondLive = async function(id) {
-        const ans = prompt("Official Admin Response (Pins directly into Playbook FAQ deck):");
-        if (ans) {
-          await db.collection("questions").doc(id).update({ answer: ans, status: 'answered' });
+        const docRef = db.collection("questions").doc(id);
+        const snapshot = await docRef.get();
+        const currentAnswer = snapshot.exists && snapshot.data().answer ? snapshot.data().answer : "";
+
+        // Automatically pre-populates input prompt with existing answer data strings
+        const ans = prompt("Official Admin Response (Pins directly into Playbook FAQ deck):", currentAnswer);
+        if (ans !== null) {
+          await docRef.update({ answer: ans, status: 'answered' });
         }
       };
 
@@ -427,16 +374,6 @@
         } else if (pass !== null) {
           alert("Incorrect security PIN credentials.");
         }
-      });
-
-      document.getElementById('launch-dashboard-btn').addEventListener('click', () => {
-        mainHubView.classList.add('hidden');
-        dashboardView.classList.remove('hidden');
-      });
-
-      document.getElementById('exit-dashboard-btn').addEventListener('click', () => {
-        dashboardView.classList.add('hidden');
-        mainHubView.classList.remove('hidden');
       });
     </script>
   </body>
